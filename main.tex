@@ -1,0 +1,544 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{tikz-cd}
+\usepackage{color,soul}
+\usepackage{todonotes}
+\usepackage{titling}
+\usepackage{array}
+\usepackage{algorithm2e}
+\usepackage{zref-savepos}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{multirow, bigstrut}
+\usepackage[font={small,it}]{caption}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usetikzlibrary{arrows}
+
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+\usetikzlibrary{calc}
+\usepackage{comment}
+\usepackage{enumerate}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem*{theorem*}{Theorem}
+\newtheorem*{question*}{Question}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem*{lemma*}{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{corollary*}{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem*{problem*}{Problem}
+\newtheorem{counterexample}[theorem]{Counter Example}
+    
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newtheorem*{remark*}{Remark}
+
+\theoremstyle{plain}
+
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\K}{\mathbb{K}}
+
+\newcommand{\X}{\mathbf{X}}
+\newcommand{\W}{\mathbf{W}}
+\newcommand{\Var}{\text{Var}}
+
+\DeclareMathOperator{\Hmg}{Hmg}
+\DeclareMathOperator{\Symb}{Symb}
+\DeclareMathOperator{\Hom}{Hom}
+\DeclareMathOperator{\ev}{ev}
+\DeclareMathOperator{\E}{\mathbb{E}}
+\DeclareMathOperator{\maxroot}{maxroot}
+% \DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\mesh}{mesh}
+\DeclareMathOperator{\lmesh}{lmesh}
+\DeclareMathOperator{\cone}{cone}
+
+
+\DeclarePairedDelimiter\parentheses{\lparen}{\rparen}
+\newcommand{\Tr}[1]{\operatorname{Tr} \parentheses*{#1}}
+\newcommand{\diag}[1]{\operatorname{diag} \parentheses*{#1}}
+\newcommand{\ip}[1]{\left \langle #1 \right \rangle}
+
+\newcommand{\zk}[1]{{\color{blue}ZK:#1}}
+\newcommand{\nr}[1]{{\color{purple}NR:#1}}
+
+
+\setlength{\droptitle}{-6em}
+
+\title{\vspace{-2ex}{Asymmetric Random Projections}\vspace{-2ex}}
+\author{Zohar Karnin, Edo Liberty, Nick Ryder}%\vspace{-8ex}}
+
+\begin{document}
+\maketitle
+%\vspace{-8ex}
+
+\begin{abstract}
+% Traditionally random projections compress data obliviously with the intent of preserving the local euclidean structure. When restricting to unbiased estimators but allowing the compressors to dependend on the data, minimizing mean squared error of our compressor is reduced to minimizing variance. In this paper we begin to explore questions around unbiased random compressors which minimize variance. Specifically, given two datasets, we tell how to optimally linearly preprocess the datasets to minimize variance of traditional random projection methods. We test this preprocessing framework on a variety of datasets to see its effectiveness on both fast matrix multiplication and regression problems.
+
+Random projections are a popular tool for reducing dimensionality while preserving its geometry. In many applications the data set to be projected is given to us in advance, yet the current random projection techniques do not make use of information about the data. In this paper we provide a computationally light way to extract statistics from the data that allow to design a data dependent random projection with superior performance compared to data-oblivious random projections. Specifically we tackle scenarios such matrix multiplication and linear regression/classification in which we wish to estimate inner products (or distances) between pairs of vectors from two possibly different sources. We show that it is possible to exploit the difference between these sources to get superior results. 
+
+To showcase the effectiveness of our method we apply it on matrix multiplication where we achieve an reduction of X? \zk{fill this} on the error with near-zero computational overhead compared with oblivious random projection. For linear regression and classification following a dimension reduction operation our method gives rise to a novel technique of minimal computational cost, that potentially increases performance significantly (X\% improvement in accuracy \zk{write exact statement here}) when compared with oblivious random projections.
+\end{abstract}
+
+
+\section{Intro}
+The use of random projections as a method for data compression has been well studied for the past few decades. Random projections provide a theoretical backing for oblivious compression techniques. These techniques are employed in scenarios where we want to quickly compress data to get significantly smaller model sizes at the cost of well understood error. From this perspective, there are multiple aspects to optimize over: sparsity, randomness, and mean error. Much has been done to study sparse random projections, with modern algorithms (nearly?) reaching tightness results. Likewise, people have developed methods which use linearly many bits to obtain psuedo-random projections which still give high probability guarantees on the compressed data. In all of these frameworks, we still approach random projections from a data-oblivious point of view.
+
+Another perspective on random projections is derived from the mean squared error of our estimator. To understand the mean squared error, we can decompose it into the expected variance and expected bias. By restricting to unbiased compressors, we reduce to minimizing the expected variance of our compressor. An unbiased compressor with small expected variance does not necessarily preserve the local $\ell^2$ structure with high probability (to see this one can look at a compressor given by randomly dropping coordinates of a vector). In addition to the low variance guarantee one still needs a $JL$-lemma to get the structure preservation. To the authors knowledge not much has been studied about minimum-variance unbiased compressors.
+
+In this paper we tackle the problem of preprocessing our data before applying traditional random projection techniques. Inherit to this is a flexibility to use any of the well-known random projection methods (including sparse random projections or FJLT), as long as they have associated to them JL-lemma guarantees. For the analysis of this paper, we assume our compressor is given by a matrix of iid Gaussians. Our main result details the best linear preprocessing method: the one which equalizes the covariance of our two datasets. Perhaps unsuprisingly, one consequence of this is there is no linear preprocessing which reduces variance when both of our datasets are drawn from the same distribution. In that symmetric situation one would need to develop a weighted random projection approach to reduce variance further. 
+
+% The famed Johnson-Lindenstrauss lemma yields high probability bounds for preserving the relative $\ell^2$ structure of arbitrary data. 
+
+
+% Dating back to the JL-lemma which provides high probability bounds for uniformly random projections, simpler compression schemes followed using either less random bits or higher sparsity. 
+
+
+% In addition to studying the fundamental projection methods, people have explored the relationship between random projections and PCA from differing perspectives. 
+
+
+
+\section{Comparison with Previous Results}
+
+Random projections have been originally proposed by Johnson and Lindenstrauss \cite{johnson1984extensions}. They prove that the linear projection of a point onto a random subspace is a mapping that approximately preserves the norm of any vector. As a corollary, given a collection of points, their projection onto a linear subspace provides a low space representation that approximately preserves the geometry of the original set of points. The fact that the mapping is linear makes it useful for several applications such as sketching \cite{alon1999space}, linear regression and other classification tasks \cite{fradkin2003experiments}, $k$-nearest neighbors \cite{andoni2006near}, fast approximate linear algebra \cite{clarkson2009numerical}, and more.
+
+Due to the many application they admit, research produced varios different methods for obtaining random projections. In \cite{dasgupta2003elementary} the authors show that random Gaussian matrices provide the same guarantees, up to lower order terms as random projections. This proof was extended in \cite{achlioptas2003database} showing that a matrix with random signs is sufficient. A series of papers starting with \cite{ailon2009fast} provided a random projection matrix that can be applied in near-linear time regardless of the target dimension, by applying the Hadamard transform on the data. A different line of work \cite{nelson2013osnap} pursued sparse random projection matrices; this are useful for computational speed when the input vectors are sparse themselves.
+
+Applications of random projections typically use the fact that for a collection of input vectors, the collection of low dimensional vectors obtained via the random projection have the same pairwise distances, or inner products. For $k$-nearest neighbors and approximate matrix multuplication the application is immediate \zk{citations for knn and fmm}. For linear regression one can use the guarantee that $\ip{x,w^*}$ is preserved for every datapoint $x$ and the optimal (unknown) regressor $w^*$. This was used for developing a fast algorithm for linear regression \cite{fradkin2003experiments, maillard2012linear}. This property was used for kernel based linear classification in \cite{rahimi2008random} that choose random features from the kernel space, thereby removing the quadratic dependene on the example number in the run-time of SVM.
+
+
+These guarantees are provided by the above papers as in all of them, it is shown that the estimate of the inner product (or L2 distnace) of the projected vectors is an random estimator of the original quantity that is unbiased, sub-gaussian, and has a controlled variance. The projections provided in the mentioned papers are also oblivious to the data. This can be an advantage when the data cannot be observed in advance, but in many applications, this is not the case. 
+
+Keeping this in mind, some papers provided methods for reducing dimensionality in data dependent ways. The most known and established deterministic dimensionality reduction is likely PCA. It is in fact provably the optimal procedure for minimizing the mean squared error of the norm estimate, for a given pool of points. In the setting where the distances or inner products are applied to pairs not coming from the same set, the deterministic analog of PCA is CCA. The disadvantage of both methods are (1) their computational cost\footnote{There are papers giving a faster approximate solution for PCA and CCA, but those are outside the scope of this paper}, (2) they can perform poorly when the objective is not exactly to minimize the \emph{mean} square error. There are several other deterministic methods for dimensionality reductions, with different objectives than preserving inner products listed in the survey \cite{cunningham2015linear}.
+
+A few examples of randomized approaches: In \cite{li2006improving}, the authors suggest to store the norms of the original vectors in addition to the random projection and show that the maximum likelihood estimate (MLE) of the distance or inner product has a lower variance compared to other random projections. The major disadvantage of this technique is (1) that it depends on the random projection technique, and (2) to compute the MLE one needs to solve a cubic one dimensional equasion which can be time consuming compared to computing an inner product or L2 distance. In \cite{cohen2015dimensionality} the authors provide non-oblivious random projections obtained by distorting the space according to the covariance matrix of the data. Specifically, they propose to multiply the data matrix with a random projection, then orthogonolize the result. The estimates of inner products are no longer unbiased, but the authors show that this non-oblivious projection provides better guarantees for $k$-means clustering, and $k$-rank approximation. The authors of \cite{sen2013informed} use a mixture of PCA and random projections to obtain a data dependent projection that can potetially have superior guarantees to oblivious random projections.
+
+
+In this paper, we show that having some knowledge about the collection of points can allow for random projections with better guarantees. We focus our analysis on estimating the inner product of vector pairs, though our methods extend trivially to preserving L2 distances and norms. The projections we propose give an unbiased, sub-gaussian estimator for inner products with a smaller variance than that given in the oblivious case. By making sure the estimate is unbiased, we maintain the flexibility of random projections and avoid it being useful only for a specific target. In order to be applicable to a big-data application, our methods can be made to work in linear processing time given a single pass of the data. Finally, our technique can in fact be decomposed into a data pre-processing stage followed by an oblivious random projection. As a result, it can be used with any oblivious random projection method
+
+We give a rigorous analysis of our techniques proving that our methods are never worse than oblivious techniques, and can be far better, given some properties of the data. Specifically, our method is applicable in a setting where we wish to preserve inner products of vector pairs coming from different sets (or distributions). Our analysis shows that when these sets are different our technique gives superior guarantees compared to the oblivious techniques, where the difference between the performance relates to a distance measure between the two sets. We demonstrate the generality of our technique by applying it to two different applications. The first is fast matrix multiplication \ref{sec:FMM} and the second is linear regression / classification \ref{sec:linear}.
+
+% \begin{itemize}
+%     \item \emph{Database-friendly random projections: Johnson-Lindenstrauss with binary coins} Dimitris Achlioptas
+%     \item \emph{The Fast Johnson-Lindenstrauss Transform and Approximate Nearest Neighbors} Nir Ailon and Bernard Chazelle 
+%     \item \emph{Low-distortion subspace embeddings in input-sparsity time and applications to robust linear regression.}Xiangrui Meng and Michael W Mahoney. 
+%     \item \emph{Osnap: Faster numerical linear algebra algorithms via sparser subspace embeddings} Jelani Nelson and Huy L Nguyên.
+%     \item \emph{Sketching as a Tool for Numerical Linear Algebra} David P. Woodruff
+%     \item \emph{Tabulation-based 5-independent hashing with applications to linear probing and second moment estimation} Mikkel Thorup and Yin Zhang.
+%     \item \emph{User-Friendly Tail Bounds for Sums of Random Matrices} Joel A. Tropp
+%     \item Improving Random Projections Using Marginal Information: Improves the estimate of $<x,y>$ by storing $\|x\|,\|y\|$ and using the MLE. Complementary to our methods, though we do not analyze the MLE estimate when applied with our pre-processing. Also, the computation of the estimate is much slower as it requires solving a cubic equation instead of computing an inner product
+%     \item Informed Weighted Random Projection for Dimension Reduction: Uses a mix of PCA with random projections, guided by labels of a learning task. 
+% \end{itemize}
+
+\section{Data Dependent Random Projections}
+
+In what follows we consider the following setup. There are two distributions $\X, \W$ over vectors of dimension $d$ that are know to us, either completely or via oracle access to i.i.d samples. We wish to estimate inner products of the form $\ip{x,w}$ where $x \sim \X, w \sim \W$. We do so via a linear dimension reduction operator that transforms $x$ and $w$ to dimension $k \ll d$ vectors $\tilde{x}, \tilde{w}$ in a way that $\ip{\tilde{x}, \tilde{w}} \approx \ip{x,w}$.
+
+\subsection{Oblivious Random Projections}
+Consider the case of an oblivious random projection. Here $R$ is a random $k \times d$ matrix and we have $\tilde{x} = Rx, \tilde{w} = Rw$. We consider the random variable $\ip{\tilde{x}, \tilde{w}}$ as an estimate to $\ip{x,w}$. Below we analyze the bias and variance of this r.v.\ for random projections obtained by having the elements of $R$ i.i.d. This analysis is not new, but it's details will be useful in the following sections for explaining are techniques.
+
+\begin{lemma}
+Let $R$ be a $k \times d$ matrix of i.i.d entries whose first 4 moments are $0,1/k,0,s_4$, with $s_4 \leq 3/k^2$. We have that $\ip{\tilde{w},\tilde{x}}$ is an unbiased estimator of $\ip{x,w}$ whose variance is at most $\ip{x,w}^2 + \|x\|^2\|w\|^2$.
+\end{lemma}
+\begin{proof}
+\zk{we can have the proof in the appendix}
+
+
+We begin by analyzing a simple random projection obtained by sampling a $k \times d$ matrix $R$ of i.i.d scaled Gaussians $\mathcal{N}(0, 1/\sqrt{k})$. This analysis is not new, but it's details will be useful in the following sections for explaining are techniques. We have
+$$\E[\ip{Rx, Rw}] = \E[x^TR^TRw] = x^T\E[R^TR]w = x^TIw = \ip{x,w}$$
+meaning that our estimate is unbiased. We move on to compute its variance. To that end, we begin with the case of $k=1$ where the dimension reduction is with a $d$ dimensional vector $r$ and denote by $r_i$ its $i$'th element. We compute the second moment explicitly; to that end we denote by $s_{2,2} = \E_{r_i,r_j \sim \mathcal{N}(0,I)} r_i^2 r_j^2$, $s_{4} = \E_{r_i \sim \mathcal{N}(0,I)} r_i^4$. Recall that for the Gaussian distribution $s_{2,2}=1, s_{4}=3$.
+\begin{align*}
+    \E_{r \sim \mathcal{N}(0,I)} \ip{x, r}^2 \ip{w, r}^2 &= \E_r \left( \sum_i x_i r_i \right)^2 \left( \sum_i w_i r_i \right)^2\\
+ &= \E_{r} \left(\sum_i x_i r_i\right)^2 \left(\sum_i w_i r_i\right)^2 \\
+&=\E_r \left(\sum_i x_i^2 r_i^2 +  \sum_{i \neq j} x_i x_j r_i r_j \right) \left(\sum_i w_i^2 r_i^2 + 2 \sum_{i < j} w_i w_j r_i r_j \right)\\
+&= \E_r \left(\sum_i x_i^2 w_i^2 r_i^4 + 2 \sum_{i \neq j} x_i x_j w_i w_j r_i^2 r_j^2 + \sum_{i \neq j} x_i^2 w_j^2 r_i^2 r_j^2\right) \\
+&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2} \sum_{i \neq j} x_i x_j w_i w_j  + s_{2,2} \sum_{i \neq j} x_i^2 w_j^2 \\
+&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2}\left(\ip{x,w}^2 - \sum_i x_i^2 w_i^2\right) + s_{2,2} \sum_{i \neq j} x_i^2 w_j^2 \\
+&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2}\left(\ip{x,w}^2 - \sum_i x_i^2 w_i^2\right) + s_{2,2} \left( \|x\|^2\|w\|^2 - \sum_i x_i^2 w_i^2 \right)  \\
+&= \left(s_4 - 3s_{2,2}\right)  \sum_i x_i^2 w_i^2 + 2s_{2,2} \ip{x, w}^2 + s_{2,2} \|x\|^2 \|w\|^2 \\
+&= 2\ip{x, w}^2 + \|x\|^2 \|w\|^2 \\
+\end{align*}
+We get that the variance of the estimate of $\ip{x,w}$ is
+$$\Var = \ip{x,w}^2 + \|x\|\|w\|^2$$
+For the case of $R$ being a matrix with target dimension $k$, since everything is i.i.d, the estimate is simply an average of $k$ independent estimates of target dimension 1, and the variance is the same as above, divided by $k$.
+\end{proof}
+
+We do prove this here, but mention that the bound on the variance of the estimated inner product given above extends, at least asymptotically to many other techniques such as the original Johnson and Lindenstrauss random projection, FJLT, and some sparse random projections. For generality we define the following 
+\begin{definition}
+A \emph{valid random projection} $R$ as one that for some constant $C$ independent of the data or its 
+dimension, is such that 
+$$ \E[\ip{Rx,Rw}] = \ip{x,w} , \ \ \  \Var[\ip{Rx,Rw}] \leq C \ip{x,w}^2 + \|x\|^2\|w\|^2 $$
+\end{definition}
+Our results provide a black-box modification to any valid random projection. In particular, as shown by the above lemma, it applies to random projections obtained from random gaussians or scaled signs.
+
+
+\subsection{Our Solution}
+Our technique follows from a simple observation. Consider an invertible matrix $A$. We choose a different projection for the vector $x$ and $w$. Specifically, we set 
+$$ \tilde{x} = RAx, \ \ \ \tilde{w} = RA^{-\top}w $$
+where $A^{-\top} = (A^{-1})^\top$ is the inverse transpose of $A$. For these estimate it is easy to observe that $\ip{\tilde{x},\tilde{w}}$ remains an unbiased estimate of $x,w$ since $\ip{Ax, A^{-\top}w}=\ip{x,w}$. However, when we use the variance bound for valid random projections we get 
+$$\Var(x,w) \leq C \ip{x,w}^2 + \|Ax\|^2\|A^{-\top}w\|^2$$
+meaning we replaced the term $\|x\|^2\|w\|^2$ with $\|Ax\|^2 \|A^{-\top}w\|^2$. Now, since our vectors $x,w$ are drawn from known distributions we can consider a matrix $A$ that minimizes that quantity when averaged over the possible draws. Specifically, we aim to minimize the function
+$$\Phi(A) = \E_{x,w}\left[\|Ax\|^2\|A^{-\top}w\|^2\right]$$
+
+It turns out that $\Phi$ can be efficiently minimized by applying the technique of CCA (Canonical Correlation Analysis) on the covariance matrices.
+
+\begin{theorem} \label{thm:full}
+Let $\X,\W$ be distributions over $\R^d$ with second moments $\Sigma_X=\E_x[xx^\top], \Sigma_W=\E_w[ww^\top]$. If we decompose 
+$$ \Sigma_X = Q_X^\top Q_x, \ \Sigma_W = Q_W^\top Q_W, Q_XQ_W^\top = UDV^\top $$
+with $UDV^\top$ the singular value decomposition of $Q_XQ_W^T$, the minimizer of $\Phi(A)$ is 
+$$  A^* = D^{1/2} U^\top Q^{-\top}$$
+Letting $\sigma_X, \sigma_W$ be the vectors of the square roots of the eigenvalues of $\Sigma_X, \Sigma_W$. We have
+$$ \Phi(I) = \|\sigma_X\|^2 \|\sigma_W\|^2, \Phi(A^*) = \ip{\sigma_X, \sigma_W}^2 $$
+\end{theorem}
+
+The above theorem provides the optimal solution to the problem of minimizing $\Phi(A)$ but its computational cost may be too steep. Although it is solvable in polynomial time, or even near linear time in an approximate version, we could have a scenario where the input dimension is quite large and we cannot afford to have multiple passes over it. For this scenario we provide an alternative solution that does not achieve the global minimum of $\Phi$ but admits a much simpler solution, and has guarantees that in many settings are sufficiently good. The idea in high level is to ignore all off-diagonal values of $\Sigma_X, \Sigma_W$ and solve the problem assuming they are zero. Collecting those stats can easily be done using a single pass and the decomposition becomes trivial.
+
+\begin{theorem} \label{thm:fast}
+Let $\X,\W$ be distributions over $\R^d$ with second moments $\Sigma_X=\E_x[xx^\top], \Sigma_W=\E_w[ww^\top]$. Let $d_X,  d_W$ element-wise square root of the diagonal vectors $\Sigma_X, \Sigma_W$ and let $\hat{A}$ be the diagonal matrix whose $i$'th entry is\footnote{If the diagonal has a zero value, it means we can ignore that entry in the original data. Hence, we assume w.l.o.g that all diagonals are strictly positive} $d_X(i)^{-1/2} d_W(i)^{1/2}$. It holds that
+$$ \Phi(I) = \|d_X\|^2 \|d_W\|^2, \Phi(\hat{A}) = \ip{d_X, d_W}^2 $$
+\end{theorem}
+
+The above theorem, coupled with the Cauchy-Schwartz inequality shows that the diagonal approach of $\hat{A}$ can only be better than taking the identity matrix, i.e.\ using an oblivious random projection. Although a pathological case can be constructed in which $\Phi(A^*) \ll \Phi(\hat{A}) = \Phi(I)$, in the sections below we experiment with real data and see that this is rarely the case, meaning that there is a significant gap between $\Phi(I)$ and $\Phi(\hat{A})$.
+
+\subsection{Proofs}
+
+\begin{proof} [Proof of Theorem~\ref{thm:full}]
+\zk{write proof in the following section}
+\end{proof}
+
+\begin{proof} [Proof of Theorem~\ref{thm:fast}]
+\zk{write proof in the following section}
+\end{proof}
+
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+\section{Applications}
+
+In this section we show how the developed tools can be used to speed up approximate matrix multiplications and improve the quality of linear regression or classification.
+
+\subsection{Fast Matrix Multiplication} \label{sec:FMM}
+One natural application in which we want to compress data from two different distributions arises in fast matrix multiplication (FMM). In this context, given two matrices $X, W$, we have the $i,j$th entry of $X^\top W$ is $\ip{x_i, w_j}$ where $x_i$ is the $i$th column of $X$ and $w_j$ the $j$th column of $W$. Thus if we want to compress our matrices so matrix multiplication is relatively preserved, this is equivalent to compressing the columns. We get the following simple rescaling algorithm for FMM: \\
+
+\RestyleAlgo{boxruled}
+\begin{algorithm}[H]
+ \KwData{Two matrices $X,W$ with rows $x_i, w_i$}
+ \KwResult{Approximation of $X W^\top$ }
+ $\Sigma_X \gets \sum_i \diag{ x_{i,j}^2 }$\;
+ $\Sigma_W \gets \sum_i \diag{ w_{i,j}^2 }$\;
+ $\tilde{X} \gets \Sigma_X^{-1/4}\Sigma_W^{1/4}X$\;
+ $\tilde{W} \gets \Sigma_W^{-1/4}\Sigma_X^{1/4}W$\;
+ Randomly project the columns of $\tilde{X}, \tilde{W}$ to $P \tilde{X}, P \tilde{W}$\;
+ Output $\tilde{X}^\top P^\top P \tilde{W}$\;
+ \caption{Fast Variance Scaling FMM}
+ \end{algorithm}
+Despite the simplicity of this variance scaling trick, in practice we see notably decreases in mean squared error from unscaled random projections on a variety of datasets. Details are in \S\ref{sec:experiments}.
+
+
+
+\subsection{Linear regression and classification} \label{sec:linear}
+
+A common scenario in linear learning, either for regression or classification, is that where the input dimension is quite large, possibly larger than the number of examples. A common approach for handling such cases, mitigating both the danger of over-fitting and the large run-time is to apply a random projection to the data and solve the regression problem on the lower dimension projected data. We note that these techniques are somewhat different than regularization based techniques, or methods aiming to find a sparse regressor. The advantage of this method has been established in previous works, and in a nutshell, comes from both having to learn a small number of parameters to begin with, hence obtaining faster run-time, and dealing with settings where the regressor is not necessarily sparse.
+
+The analysis of this approach follows from observing that for the optimal regressor $w^*$ and any data point $x$ we have 
+$$ \ip{w^*,x} \approx \ip{Rw^*, Rx} .$$
+It follows that by solving the problem on the projected data, our loss is upper bounded by the loss of $Rw^*$, which in turn is bounded due to the approximation guarantees of the random projection.
+
+We cannot apply the assymetric approach naively as we do not have access to the distribution of $w^*$. That being said, in most solutions to the problem one typically assumes an isotropic prior (translating to Ridge regression), meaning that $\Sigma_W=\lambda I$ for some scalar $\lambda$. Taking this approach exactly dictates that we pre-process the inputs $x$ by multiplying them by $\Sigma_X^{-1/4}$, or taking the more practical approach, by $d_X^{-1/4}$ where $d_X(i)$ is the expected value of $x_i^2$. 
+
+This approach however, depends too heavily on the prior assumption of $w^*$ that may not be correct. Taking this in to account we consider a more flexible approach by adding a hyper-parameter $\lambda$ and performing a pre-processing step of multiplying the data by $d_X^{\lambda}$ and taking $\lambda=-0.25$ recovers the above approach, $\lambda=0$ recovers the approach of oblivious random projections. For the optimization procedure, it is possible to treat $\lambda$ as a hyper parameter and use a solver for the linear learning problem. Another option is to use any gradient based solver on the joint space of the low dimensional regressor and $\lambda$. \zk{We should keep the last sentence only if we add experiments for SGD on $\lambda$}
+
+% In the context of linear learning, we view our data as drawn from a distribution $\X$ and our regressor as being drawn from a distribution $\W$. Although we do not have access to the distribution $\W$ in most solutions to the problem one typically assumes an isotropic prior (translating to Ridge regression), meaning that $\Sigma_W=I$. Keeping that assumption, the theorems above dictate that we should preprocess our data with $\Sigma_X^{-1/4}$. 
+
+% While this provides a rigorous guarantee for least square regression in the setting where the prior is known, we acknowledge that in practice the prior assumption is too far from the truth. To correct for this we treat our rescaling of our covariance as a hyperparameter by scaling our data with $\Sigma_X^{\lambda}$. This is equaivalent to assuming that the regressor $w$ has a prior with a covariant of $\Sigma_W = \Sigma_X^{\beta}$ for some scalar $\beta$. Although this assumption hardly captures all possible priors for the regressor we provide experiments showing that for properly chosen $\lambda$ it is possible to achieve results superior to those obtained in the oblivious random projection setting.
+
+
+Our experiments in section~\ref{sec:experiments} show that a suitable value for this parameter can significantly improve the performance of regression and classification tasks.
+
+
+\section{Experiments}\label{sec:experiments}
+\subsection*{FMM}
+For all of these experiments, emperical mean squared error was calculated by taking 100 random projections.
+\begin{figure}
+\begin{tabular}{cc}
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/diag_diag_100_1000_100_distortion".png} &
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_diag_100_1000_100_distortion".png} \\
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_randskew_100_1000_100_distortion".png}&
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_rand_100_1000_100_distortion".png}\\
+  \end{tabular}  \caption{Synthetic Data: plotted the log mean squared error against the target dimension of the random projections. The data was either pulled from gaussians with diagonal covariance, uniformly random covariance, or diagonal covariance with random noise (randskew)}.
+  \label{fig:fmm_synthetic}
+\end{figure}
+
+
+\begin{figure}
+\begin{tabular}{cc}
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/arcene_5000_700_100_distortion".png} &
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/arcene_700_5000_100_distortion".png} \\
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/isolet_308_1559_100_distortion".png}&
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/isolet_t_1559_308_100_distortion".png}\\
+  \end{tabular} \caption{Organic Data: Biological Data. The arcene data is mass-spectrometric (700 samples, 5000 features) and the isolet data includes sonorant features (1559 samples, 308 features). Here we take the feature space and randomly split the features in to two groups, so we have our data represented from features $A$ and from features $B$. We see improvement in mean squared error when applying our technique to compare the inner products of data points in both feature spaces. When we instead try to compare the inner products of the feature vectors we get no improvements.}.
+  \label{fig:fmm_biological}
+\end{figure}
+
+\begin{figure}
+\begin{tabular}{cc}
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/go_sf_3853_2593_100_distortion".png} &
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/go_sf_t_2593_3853_100_distortion".png} \\
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/tw_oc_5673_5000_100_distortion".png}&
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/tw_oc_t_5000_5673_100_distortion".png}\\
+  \end{tabular}  \caption{Here we look at two sparse, integer valued datasets. Go SF has 2593 data points which have 3853 features. TW OC has 5000 data point with 5673 features. We see rescaling the diagonal covariance here gives significant improvements in mean squared error and gets very close CCA}.
+  \label{fig:fmm_sparse}
+\end{figure}
+
+\subsubsection*{Regression}
+
+\begin{figure}
+\begin{tabular}{ccc}
+  \includegraphics[width=.3\linewidth]{"Data-Dependent Random Projections/experiments/regression/slice_localization_384_53500_5_lamb_5_0".png} &
+  \includegraphics[width=.3\linewidth]{"Data-Dependent Random Projections/experiments/regression/e2006_full_150360_16087_20_lamb_50_6".png} &
+  \includegraphics[width=.3\linewidth]{"Data-Dependent Random Projections/experiments/regression/e2006_full_150360_16087_20_lamb_50_5".png} \\
+  \end{tabular}
+  \label{fig:reg_linear}
+  \caption{Linear Regression (fitting): Plotted emperical mean linear loss against hyper-parameter lambda. Slice localization dataset has 53500 samples with 384 features gathered from biological sources. E2006 dataset is sparse data derived from term frequency–inverse document frequency (16087 samples, 150630 dimensional). The isotropic prior causes huge blow up for the sparse data, but seems near optimal for the biological data.
+}
+\end{figure}
+
+
+\begin{figure}
+\begin{tabular}{cc}
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/regression/cifar_logistic_3072_1979_100_lamb_50_0".png} &
+  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/regression/rcv1_47236_20242_15_lamb_50_0".png}  \\
+  \end{tabular}
+  \label{fig:reg_logistic}
+  \caption{Logistic Regression (classification): plotted sklearn score (accuracy) against target dimension. Cifar dataset is image classification, 1979 samples with 3072 attributes projected 100 times. RCV1 dataset is 20242 data points with 47236 features. In both cases the isotropic prior behaves well.
+}
+\end{figure}
+
+
+
+\section{Future Directions}
+In this paper we provide an optimal linear preprocessing to take the asymmetric problem of drawing data from two distributions and reduce it to the symmetric case of drawing data from one fixed distribution. We frame this from a variance minimization point of view, trying to optimize over unbiased estimators with associated high probability guarantee's on the local $\ell^2$ structure. This leads to Question \ref{ques:symmetric}: Given a fixed distribution, what is the variance minimizing unbiased estimator for that dataset which also carries with it a high probability guarantee? Interestingly, if we want our random compressor to still be projection-matrix valued, this restricts the possible singular values of the covariance of our distribution as noted in Theorem \ref{thm:weighted}. In this case can one find a reweighted distribution of projection matrices to achieve this lower bound? If so can one find parallels of the theory around random projections to get similar sparsity results? For distributions which cannot achieve this bound, one can project deterministically onto the top singular components until the remaining satisfy the inequality in Theorem \ref{thm:weighted}, and then use a weighted random projection on the rest of the spectrum to maintained unbiasedness. One can view this as using PCA when the top singular values overwhelm the rest, and then using a weighted random projection on what remains. Is this a variance minimizer in such scenarios? 
+
+\section*{Acknowledgements}
+The authors would like to thank Eric Hallman, Jonathan Leake, Xuchen You, and Yu Bai for their helpful comments and suggestions during this project.
+
+\bibliographystyle{alpha}
+\bibliography{bib}
+
+\appendix
+
+\section{Old Section 3}
+
+\newpage
+
+Random projections are traditionally used in contexts where we want data-independent data compression. In this context, random projections provide a random family of linear maps which form a unbiased compressor. To see this we generically define a compressor.
+\subsection*{Compressors}
+We define a compressor to be a distribution $\Pi$ of functions $P: \R^N \to \R^k$. Given a compressor and some function $f$ which measures the local structure we want to preserve, we define the bias and variance at $x,w$:
+\[\text{Bias}^2(x,w) = \left(\E_{P \sim \Pi} [f(P(x), P(w))] - f(x,w)\right)^2\]
+\[\text{Variance}(x,w) =  \E_{P \sim \Pi} [f(P(x), P(w)) - f(x,w)]^2\]
+
+A natural function to study in the context of fast matrix multiplication and regression is the standard inner product on our vectors. Then having an unbiased compressor corresponds to preserving the inner product in expectation. 
+
+Now given two distributions, $\mathbf{X}, \mathbf{W}$, we consider the expected bias and to get quantitative statements about our compressors with rebspect to our data:
+\[\E_{\mathbf{X}, \mathbf{W}} \text{Bias}^2(x,w)~~~ \E_{\mathbf{X},\mathbf{W}} \text{Variance}(x,w)\]
+
+
+
+
+\subsubsection*{Unbiased Linear Estimators}
+The defining feature of random projections is its unbiasedness. Unbiased estimators are preferable in scenarios where we care about the estimation of all of our data, even outliers in our distribution. 
+
+Let $\Pi$ be the distribution of linear operators from $\R^N \to \R^k$. We consider the compressor to be the distribution given by mapping $x$ under our random projections. Then we can calculate the bias at any two points with the following simple calculations
+\begin{align*}\text{Bias}^2(x,w) &= \E_{P \in \Pi} \langle Px, Pw \rangle - \langle x, w \rangle\\
+&= \E_{P \in \Pi} x^\top P^\top P w - x^\top w\\ 
+&= x^\top (\E_{P \in \Pi} P^\top P) w - x^\top w\\ 
+\end{align*}
+
+If our distributions on $\mathbf{X}, \mathbf{W}$ have support in $\R^N$ not contained in some proper subspace, then having expected bias vanishing implies that $\E_{P \in \Pi} P^\top P = I$. Examples of unbiased linear estimators include random projections (invariant under orthogonals on the domain and codomain), i.i.d. gaussian entries, scaled random bits, and sparse variants of these.
+
+
+
+\subsubsection*{Minimum-Variance Unbiased Estimator}
+Most of the progress in data-independent random projections is found in trying to minimize the time to compute the projections. To this end people have considered sparsity and reducing the number of random bits as in FJLT. Another approach to optimizing unbiased estimators is to minimize the variance. For unbiased estimators, minimizing the variance is equivalent to minimizing the second moment:
+\begin{align*}\text{Variance}(x,w) &= \E_{P \sim \Pi} [ (x^\top P^\top P w)^2 ] - (\E_{P \sim \Pi} [x^\top P^\top P w])^2 \\
+&=\E_{P \sim \Pi} [ (x^\top P^\top P w)^2 ] - (x^\top w)^2 \\
+\end{align*}
+
+Now from this perspective, we get confirmation that random projections indeed are the best data-oblivious random compressors:
+\begin{theorem}
+When $x,w$ are assumed to come from isotropic distributions (their covariance matrices are the identity matrix), the minimum-variance unbiased estimator is scaled random projections. They are the optimal distribution to the following minimization problem:
+\[ \min_{\Pi} \E_{x \sim \mathbf{X}, w \sim \mathbf{W}} \E_{P \sim \Pi}[(x^\top P^\top P w)^2] \]
+\[ \E_{P \sim \Pi} P^\top P = I, P \text{ rank k} \]
+\end{theorem}
+\begin{proof}
+Let $\sigma_1, \ldots, \sigma_k$ denote the random variables on our distribution corresponding to the top $k$ singular values of $P^\top P$. Let $\Sigma_X, \Sigma_W$ denote the covariance matrices of the distributions $\mathbf{X}, \mathbf{W}$.
+\begin{align*}
+    \E_{x \sim \mathbf{X}, w \sim \mathbf{W}} \E_{P \sim \Pi}[(x^\top P^\top P w)^2] &= \E_{x \sim \mathbf{X}, w \sim \mathbf{W}} \E_{P \sim \Pi}[\Tr{(xx^\top P^\top P w w^\top P^\top P )}] \\
+    &= \E_{P \sim \Pi}[\| \Sigma_X^{1/2} P^\top P \Sigma_W^{1/2}\|_F^2] \\
+    &= \E_{P \sim \Pi}{\sum \sigma_i^2} \\
+    &\geq\frac{1}{k} \E{(\sum \sigma_i)^2} \\
+    &\geq \frac{1}{k} (\E \sum \sigma_i)^2 \\
+    &= \frac{1}{k} (\text{Tr}( \E P^\top P))^2 \\
+    &= \frac{n^2}{k} \\
+\end{align*}
+This can be seen to be achieved by uniform random projections.
+\end{proof}
+
+\subsubsection*{Non-Isotropic Distributions and Weighted Random Projections} \label{sec:symmetric}
+What happens when $\mathbf{X}, \mathbf{W}$ are the same non-isotropic distribution. Up to conjugation by orthogonals we can assume $\Sigma_X = \Sigma_W = D$ where $D$ is a positive diagonal matrix. 
+
+Emulating the theorem above we get the following lower bound
+\begin{theorem} \label{thm:weighted}
+When $\Sigma_X = \Sigma_W = D$, all unbiased estimators, $P$ rank $k$, have second moment bounded by the following:
+\[\E_{P\sim \Pi} \| D^{1/2} P P^\top D^{1/2} \|_F^2 \geq \frac{\text{Tr}(D)^2}{k}\]
+This bound can be achieved if and only if $I \succeq \frac{k D}{\Tr{D}} \succeq 0$
+\end{theorem}
+\begin{proof}
+The same string of inequalities as above holds. In order for these to be tight we need $D^{1/2} P^\top P D^{1/2}$ to have $k$ singular values $\alpha$ and the rest $0$. 
+In this situation we have $k \alpha =  \Tr{\E D^{1/2} P P^\top D^{1/2}} = \E D^{1/2} \Tr{P P^\top} D^{1/2} = \Tr{D}$. From this we see that $\frac{k D}{\Tr{D}}$ is a convex combination of projection matrices. It is well known (Convex Combinations of Projections, Man-Duen Choi, Pei Yuan Wu) that a matrix $M$ is a convex combination of rank $k$ projection matrices if and only if the trace is $k$ and $I \succeq M \succeq 0$.
+\end{proof}
+
+This yields the following natural questions
+\begin{question*}~
+\begin{itemize}\label{ques:symmetric}
+    \item Given an admissable matrix $D$, can we find a distribution of projection matrices which acheives the bound and has a JL-lemma?
+    \item What are the optimal unbiased estimators for $D$ which don't satisfy the above conditions?
+\end{itemize}
+\end{question*}
+Although the authors of this paper find this problem interesting, we leave this for future research.
+
+\subsection{Reduction of Asymmteric Distributions using CCA}
+The main problem tackled in this paper is the following: Given data drawn from two distributions $\mathbf{X}, \mathbf{W}$, how can we alter our random projections to reduce to the symmetric distribution case. In our treatment we treat the symmetric case as a black box, using any standard oblivious random projection techniques (such as iid Gaussian or random bits) to compress.
+
+To reduce to the symmetric case, note that if we are given any distribution on matrices $M \sim \Pi$ which is isotropic $\E M = I$ then for any invertible $A$ we have $A^{-1} M A$ is also isotropic. Then our second moment becomes 
+\begin{align*}
+    \E_{P \sim \Pi} \| \Sigma_X^{1/2} A^{-1} P^\top P A \Sigma_W^{1/2} \|_F^2 &= \E_{P \sim \Pi} \text{Tr}(\Sigma_X A^{-1} P^\top P A \Sigma_W A^\top P^\top P A^{-\top} \\
+    &= \E_{P \sim \Pi} \text{Tr}(A^{-\top} \Sigma_X A^{-1} P^\top P A \Sigma_W A^\top) \\
+    &= \E_{P \sim \Pi} \|(A^{-\top} \Sigma_X A^{-1})^{1/2} P^\top P (A \Sigma_W A^\top)^{1/2} \|_F^2 \\
+\end{align*}
+Hence we see the minimal value for the problem with covariances $\Sigma_X, \Sigma_W$ is equivalent to the problem with covariances $A^{-\top} \Sigma_X A^{-1}, A  \Sigma_W A^\top$. 
+\begin{lemma}[CCA]
+Given two positive definite matrices $\Sigma_X, \Sigma_W$, we can pick matrix $A$ such that 
+\[A  \Sigma_X A^\top =  A^{-\top} \Sigma_W A^{-1}  \]
+If we decompose $\Sigma_X = Q_X^\top Q_X, \Sigma_W = Q_W^\top Q_W, Q_X Q_W^\top = U_{XW} D_{XW} V_{XW}^\top$, then we can set
+\[ A = D_{XW}^{1/2} U_{XW}^\top Q_X^{-\top} \]
+\[ A^{-\top} = D_{XW}^{1/2} V_{XW}^\top Q_W^{-\top} \]
+\end{lemma}
+
+We can therefore preprocess our data with these linear transformations to equalize their covariance and reduce to the symmetric case. Although we don't give an optimal random compressor for the symmetric case in this paper, we can prove the following result:
+\begin{theorem}
+Among all unbiased random compressors which come from linearly preprocessing data and applying random iid Gaussians, the variance minimizing compressor is the one which applies CCA to equalize the covariance matrices.
+\end{theorem}
+\begin{proof}
+Since we pick a family of random projections with independently drawn rows $\frac{1}{\sqrt{k}} r_i \sim \mathcal{N}(0,I)$, we can reduce our variance calculation to the projection onto a one dimensional subspace:
+\begin{align*}
+\E_{x,w} Var(x,w) &= \E_{x,w} \E_P (x^\top P^\top P w- x^\top w)^2  \\
+&= \E_{x,w} \sum_i \frac{1}{k^2} (x^\top r_i r_i^\top w - x^\top w)^2 \\
+&= \frac{1}{k} \E_{x,w} \E_{r \sim \mathcal{N}(0,I)} (x^\top r r^\top w - x^\top w)^2 \\ 
+\end{align*}
+Since each of these are unbiased estimators of $x^\top w$, we again reduce to minimizing the second moment. We need the following mixed moments of gaussians: $s_{2,2} = \E_{r_i,r_j \sim \mathcal{N}(0,I)} r_i^2 r_j^2$, $s_{4} = \E_{r_i \sim \mathcal{N}(0,I)} r_i^4$, 
+\begin{align*}
+    \E_{r \sim \mathcal{N}(0,I)} \langle x, r \rangle^2 \langle w, r \rangle^2 &= \E_r \left( \sum_i x_i r_i \right)^2 \left( \sum_i w_i r_i \right)^2\\
+ &= \E_{r} (\sum_i x_i r_i)^2 (\sum_i w_i r_i)^2 \\
+&=\E_r (\sum_i x_i^2 r_i^2 + 2 \sum_{i\neq j} x_i x_j r_i r_j ) (\sum_i w_i^2 r_i^2 + 2 \sum_{i\neq j} w_i w_j r_i r_j )\\
+&= \E_r (\sum_i x_i^2 w_i^2 r_i^4 + 4 \sum_{i \neq j} x_i x_j w_i w_j r_i^2 r_j^2 + \sum_{i \neq j} x_i^2 w_j^2 r_i^2 r_j^2) \\
+&= s_4 \sum_i x_i^2 w_i^2  + 4 s_{2,2} \sum_{i \neq j} x_i x_j w_i w_j  + s_{2,2} \sum_{i \neq j} x_i^2 w_j^2 \\
+&= 2 s_{2,2} \langle x, w \rangle^2 + s_{2,2} \|x\|^2 \|w\|^2 - (3 s_{2,2} - s_4) \sum_i x_i^2 w_i^2\\
+\end{align*}
+For normal variables, we have $3 s_{2,2} - s_4 = 0$, so the last term in this expression vanishes. 
+
+Now we are interesting in preprocessing our data with linear transformations such that the resulting compressors are still unbiased. This corresponds to looking at $A x$ and $A^{-\top} w$ since $\langle A^{-\top} w, A x \rangle = \langle x, w \rangle$. Then to find our variance minimizer among all such compressors, we want to solve the following minimization problem:
+\[ \min_A \E_{x,w} \| A x \|^2 \|A^{-\top} w \|^2 \]
+
+\begin{align*}
+ \E_{x,w}\|Ax\|^2\|(A^{\top})^{-1}w\|^2 &= \Tr{A^{\top} A \Sigma_X}\Tr{(A^{-1} (A^{-1})^{\top}\Sigma_W}\\
+&= \Tr{Q_X A^{\top} A Q_X^\top}\Tr{(Q_W A^{-1} (A^{-1})^{\top}Q_W^\top}\\
+&= \|A Q_X^\top\|^2_F \|A^{-\top} Q_W^\top\|^2_F\\
+\end{align*}
+By Cauchy-Schwarz on the Frobenius Inner Product we get the universal lower bound:
+\[ \Tr{ Q_X Q_W^{\top} } = \langle A Q_X^\top, A^{-\top} Q_W^\top \rangle_F^2 \leq \|A Q_X^\top\|^2_F \|A^{-\top} Q_W^\top\|^2_F \]
+Note this doesnt depend on $A$, but does depend on our factorization $Q_X, Q_W$. We can obtain all possible factorizations by right multiplication by orthogonals, so our worst lower bound is $\max_{U} \Tr{\Sigma_X^{1/2} \Sigma_W^{1/2} U}^2$. 
+
+Given any matrix $M$ with SVD $M = \sum_i \sigma_i u_i v_i^\top$, we see $\Tr{M} = \sum_i \sigma_i \Tr{ u_i v_i^\top} \leq \sum_i \sigma_i$. Therefore the trace is bounded by the sum of the singular values, and equality happens iff $u_i = v_i$ for all vectors, equivalently $M$ is symmetric positive definite. Therefore our lower bound is maximized when $\Tr{Q_X Q_W^\top}^2 = \|\sigma( \Sigma_X^{1/2} \Sigma_W^{1/2})\|_1^2$.  
+
+To find $A$ which achieves this lower bound, up to rescaling for c-s to be tight we need $A Q_X^\top = A^{-\top} Q_W^\top$. The CCA scaling exactly achieves this equality.
+\end{proof}
+\begin{remark} \label{remark:singular}
+% The gains from the scaled variance to the old variance are explained in full by Cauchy-Schwarz: $\langle s_X, \bar{s}_W \rangle^2 \leq \|s_X\|^2 \|s_W\|^2$. However, there is an ordering involved now, so even when the singular values of $x,w$ are the same, since we are reordering the vectors we have improvements over the old variance.
+
+% Note that $U_W A U_X = \Sigma_W^{1/2}\Sigma_X^{1/2}$ so $A$ has the same singular values as $\Sigma_W^{1/2} \Sigma_X^{1/2}$. Thus our minimal variance is equal to the $\|s\|_1^2$ where $s$ are the singular values of $\Sigma_W^{1/2} \Sigma_X^{1/2}$.
+
+To see the gains of our rescaling, note that the only thing changing is the second moment of the norms: $\mu_2 = \E_{x,w} \|Ax\|^2 \|A^{-\top}\|^2$. If we pick $\Sigma_X = Q_X^\top Q_X, \Sigma_W = Q_W^\top Q_W$ such that $Q_X Q_W^\top$ is PSD then we see our unscaled $\mu_2$ is $\|Q_X^\top\|_F^2 \|Q_W^\top\|_F^2$ while after linear preprocessing $\mu_2$ becomes $\Tr{Q_X Q_W^\top}$. This improvmenet is exactly realized by Cauchy-Schwarz for the Frobenius inner product:
+\[ \langle Q_X^\top, Q_W^\top \rangle_F^2 \leq \|Q_X^\top\|_F^2 \|Q_W^\top\|_F^2 \]
+
+
+% to this quantity. We consider the Schatten matrix norm: $\|\cdot\|_p := \left(\sum{\sigma_i(\cdot)^p}\right)^{1/p}$ where $\sigma_i$ is the $i$th singular value. The left hand side of the following is $\mu_2$ after scaling, while the right hand side is $\mu_2$ before any scaling:
+
+% \[ \|\Sigma_X^{1/2}\Sigma_W^{1/2}\|_1 \leq \|\Sigma_X^{1/2}\|_2 \|\Sigma_W^{1/2}\|_2 \]
+% This inequality is exactly the Holder inequality for the Schatten norms.
+\end{remark}
+
+\subsection{Faster Relaxation}
+In order for our scaled projection to be competitive, we can't use the full singular value decomposition. One of the main advantages of unbiased compressors is they are quicker than the more optimal data-dependent alternatives. One way to keep our compressor's quick is to restrict to diagonal preprocessing. This assumes the coordinate system we are working in is distinguished and captures most of the covariance.
+
+In what follows we use the fact that the frobenius inner product of $M$ with a diagonal matrix only depends on the diagonal entries of $M$
+\begin{align*}
+\|A Q_X^\top \|_F^2 \|A^{-\top} Q_W^\top \|_F^2 &= \Tr{A^\top A \Sigma_X} \Tr{A^{-1} A^{-\top} \Sigma_W} \\ 
+&= \Tr{A^\top A \diag{\Sigma_X}} \Tr{A^{-1} A^{-\top} \diag{\Sigma_W}}  \\
+\end{align*}
+This simple calculation shows us that restricting to diagonal preprocessing is equivalent to throwing away all of the off-diagonal information in our covariance matrices.
+
+The clear advantage of doing this is calculating the diagonal of an emperical covariance matrix can be done in $O(Mn)$ time where $M$ is the size of our emperical data set and $n$ is the ambient dimension. 
+
+When in the diagonal situation, calculating CCA becomes simple: 
+\[\Sigma_X = \Sigma_X^{1/2} \Sigma_X^{1/2}, \Sigma_W = \Sigma_W^{1/2} \Sigma_W^{1/2}, Q_X Q_W^\top = \Sigma_X^{1/2}\Sigma_W^{1/2}\]
+\[A = \Sigma_X^{1/4}\Sigma_W^{1/4}\Sigma_X^{-1/2}\]
+This corresponds to scaling both the covariances of $\mathbf{X},\mathbf{W}$ to $\Sigma_X^{1/4}\Sigma_W^{1/4}$.
+\begin{remark}
+Let $\Delta_X = \diag{\Sigma_X}, \Delta_W = {\Sigma_W}$. As before we let $\mu_2 = \E_{x,w} \|A x\|^2 \|A w\|^2$ and we use this to measure the improvements of our linear rescaling. Then we have the following string of inequalities:
+\[ \langle Q_X^{\top}, Q_W^{\top} \rangle_F^2 \leq \langle \Delta_X^{1/2}, \Delta_W^{1/2}\rangle_F^2 \leq \|Q_X^\top\|_F^2 \|Q_W^\top\|_F^2 \]
+The far left is the optimal $\mu_2$ under CCA, the middle is the $\mu_2$ under diagonal rescaling, and the right is the $\mu_2$ with no rescaling. 
+
+We can realize the improvements from optimal CCA rescaling as the gains from Cauchy-Schwarz on the Frobenius inner product on matrices, while the gains from diagonal rescaling come from Cauchy-Schwarz on the diagonal entries of our covariances. 
+\end{remark}
+
+
+
+\end{document}
