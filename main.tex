@@ -206,7 +206,7 @@ It turns out that $\Phi$ can be efficiently minimized by applying the technique 
 
 \begin{theorem} \label{thm:full}
 Let $\X,\W$ be distributions over $\R^d$ with second moments $\Sigma_X=\E_x[xx^\top], \Sigma_W=\E_w[ww^\top]$. If we decompose 
-$$ \Sigma_X = Q_X^\top Q_x, \ \Sigma_W = Q_W^\top Q_W, Q_XQ_W^\top = UDV^\top $$
+$$ \Sigma_X = Q_X^\top Q_X, \ \Sigma_W = Q_W^\top Q_W, Q_XQ_W^\top = UDV^\top $$
 with $UDV^\top$ the singular value decomposition of $Q_XQ_W^T$, the minimizer of $\Phi(A)$ is 
 $$  A^* = D^{1/2} U^\top Q^{-\top}$$
 Letting $\sigma_X, \sigma_W$ be the vectors of the square roots of the eigenvalues of $\Sigma_X, \Sigma_W$. We have
