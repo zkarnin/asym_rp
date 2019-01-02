@@ -294,20 +294,40 @@ Our experiments in section~\ref{sec:experiments} show that a suitable value for 
 
 
 \section{Experiments}\label{sec:experiments}
+To test the preprocessing procedures, we calculate empirical mean squared error using 100 trials. 
+
 \subsection*{FMM}
-For all of these experiments, emperical mean squared error was calculated by taking 100 random projections.
+\subsubsection*{Synthetic Data}
+For the synthetic data, we used three Gaussian distributions all with mean zero. We specify each of these distribution by picking a convariance matrix: the first distribution, \emph{diag} is diagonal with entries constructed by taking the absolute entry of iid entries from a standard Laplace distribution. The second distribution, \emph{rand},  has covariance which has eigenvalues uniformly drawn between 0 and 1 and is conjugated by a random orthogonal matrix. We interpolate the previous two distributions to obtain \emph{randskew}. 
+
+For each of these data sets we draw 1000 samples from $\mathbb{R}^{100}$, then realize $100$ random projections using our preprocessing step. By putting these data points as columns in a matrix $X$, if we look at the frobenius norm of $X^\top X$ we obtain the $\ell_2$ norm of all pairwise inner products. From this we calculate the empirical mean squared error and plot log empirical MSE against different target dimensions, both plotting the log empirical MSE and the first standard deviation.
+
+For each pairing we compare three methods: Oblivious Projections which simply randomly project, Quick Projections, which normalize based on the diagonal of the covariance and then randomly project, and Optimal Projections which normalize based on the full empirical covariance and then randomly project. To randomly project in all situations we use iid $\pm 1$ projections.
+
+The results of these experiments are very promising. Quick Distortion does quite well on diagonal data, or even random skew data. It does very poorly on the purely random distribution.
+
+
 \begin{figure}
 \begin{tabular}{cc}
   \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/diag_diag_100_1000_100_distortion".png} &
   \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_diag_100_1000_100_distortion".png} \\
   \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_randskew_100_1000_100_distortion".png}&
   \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_rand_100_1000_100_distortion".png}\\
-  \end{tabular}  \caption{Synthetic Data: plotted the log mean squared error against the target dimension of the random projections. The data was either pulled from gaussians with diagonal covariance, uniformly random covariance, or diagonal covariance with random noise (randskew)}.
+  \end{tabular}  \caption{Synthetic Data: plotted the log mean squared error against the target dimension of the random projections. The data was either pulled from Gaussians with diagonal covariance, uniformly random covariance, or diagonal covariance with random noise (randskew)}.
   \label{fig:fmm_synthetic}
 \end{figure}
 
 
-\begin{figure}
+
+\subsubsection*{Organic Data}
+For the organic data, the methodology was identical to the synthetic case. In these experiments we try to randomly project both the data points and also the transpose problem of projecting the feature vectors. For the organic data, preprocessing the feature vectors for projection produced almost no change, while preprocessing the data itself was relatively effective. 
+
+The two datasets considered were both obtained from UCI Machine Learning Repository. ARCENE was obtained by merging three mass-spectrometry datasets which indicate the abundance of proteins in human sera having a given mass value. Included are some random noisy features. For this dataset we have 5000 features and 700 datapoints. 
+
+
+Isolet data consists of 1559 data points which have 308 features. In this dataset, 150 subjects spoke the name of each letter of the alphabet twice. The features include spectral coefficients; contour features, sonorant features, pre-sonorant features, and post-sonorant features. 
+
+\begin{figure}[ht]
 \begin{tabular}{cc}
   \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/arcene_5000_700_100_distortion".png} &
   \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/arcene_700_5000_100_distortion".png} \\
@@ -317,7 +337,12 @@ For all of these experiments, emperical mean squared error was calculated by tak
   \label{fig:fmm_biological}
 \end{figure}
 
-\begin{figure}
+\subsubsection*{Sparse Data}
+These experiments followed the same framework as above. With the sparse data, both projecting the data and the feature vectors resulted in promising error reduction.
+
+Both datasets we used were sparse integer-valued datasets obtained from the Repeat Consumption Matrices Data Set on the UCI Repository. TW OC is a dataset consisting of tweets with geolocation from Orange County CA area. The data coordinates correspond to the number of times a user visits a certain place. This dataset has 5000 data points with 5673 features. The Go SF dataset is similarly formatted and consists of check-ins from the app Gowalla, from the San Francisco area. It has 2593 data points with 3853 features.
+
+\begin{figure}[ht]
 \begin{tabular}{cc}
   \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/go_sf_3853_2593_100_distortion".png} &
   \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/go_sf_t_2593_3853_100_distortion".png} \\
@@ -327,9 +352,17 @@ For all of these experiments, emperical mean squared error was calculated by tak
   \label{fig:fmm_sparse}
 \end{figure}
 
-\subsubsection*{Regression}
+\subsection*{Regression}
+\subsubsection*{Linear Regression}
+For the linear regression, we do an experiment on organic data and an experiment on sparse data. Here we view the data we are regressing as being drawn from one distribution, and our regressor as being drawn from a second distribution as discussed in section \S \ref{sec:linear}. For our experiments here, we preprocessed using different powers of the covariance of our data parameterized by $\lambda$, $\Sigma_X^\lambda$. For each dataset, we conduct the experiment varying $\lambda$ and the dimension of the target space. To measure the success of the methods we plotted empirical mean linear loss (lower is better). 
 
-\begin{figure}
+For these experiments we used two datasets from the UCI Machine Learning Repository. Slice Localization was retrieved from a set of 53500 CT images from 74 different patients. The feature vector consists of two histograms in polar space describing the bone structure and the air inclusions inside the body. For the slice localization dataset we observe near optimal performance at $\lambda = -.25$, and see significant improvements from the raw regression.
+
+The E2006 Dataset consists of 10-K reports from thousands of publicly traded U.S. companies, published in 1996–2006 and stock return volatility measurements in the twelve-month period before and the twelve-month period after each report. The data is encoded using term frequency-inverse document frequency, resulting in a sparse dataset. For this data set we see major blow up in error when using negative lambda, and only small improvements for positive lambda. These results imply one should be careful before making assumptions on the regressors of certain datasets.
+
+
+
+\begin{figure}[ht]
 \begin{tabular}{ccc}
   \includegraphics[width=.3\linewidth]{"Data-Dependent Random Projections/experiments/regression/slice_localization_384_53500_5_lamb_5_0".png} &
   \includegraphics[width=.3\linewidth]{"Data-Dependent Random Projections/experiments/regression/e2006_full_150360_16087_20_lamb_50_6".png} &
@@ -339,6 +372,17 @@ For all of these experiments, emperical mean squared error was calculated by tak
   \caption{Linear Regression (fitting): Plotted emperical mean linear loss against hyper-parameter lambda. Slice localization dataset has 53500 samples with 384 features gathered from biological sources. E2006 dataset is sparse data derived from term frequency–inverse document frequency (16087 samples, 150630 dimensional). The isotropic prior causes huge blow up for the sparse data, but seems near optimal for the biological data.
 }
 \end{figure}
+
+\subsubsection*{Logistic Regression}
+Logistic regression proceeds just as linear regression did, using the recommended sklearn score for logistic regression, classification accuracy (larger is better). We proceed with two datasets. 
+
+Cifar is a well known dataset used for image classification. It consists of $32 \times 32$ color images, resulting in a 3072 dimensional data space. We take 1979 samples and project them each 100 times. For cifar, the results did not change much with covariance preprocessing.
+
+Reuters Corpus Volume I (RCV1) is an archive of over 800,000 manually categorized newswire stories recently made available by Reuters, Ltd. for research purposes. In our experiments we used 20242 stories each encoded using term frequency-inverse resulting in 47236 dimensions. For rcv we get noteable improvements, but not when using the isotropic assumption.
+
+
+
+
 
 
 \begin{figure}
