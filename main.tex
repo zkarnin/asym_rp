@@ -309,10 +309,10 @@ The results of these experiments are very promising. Quick Distortion does quite
 
 \begin{figure}
 \begin{tabular}{cc}
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/diag_diag_100_1000_100_distortion".png} &
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_diag_100_1000_100_distortion".png} \\
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_randskew_100_1000_100_distortion".png}&
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/rand_rand_100_1000_100_distortion".png}\\
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/diag_diag_100_1000_100_distortion".png} & 
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/rand_diag_100_1000_100_distortion".png} \\
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/rand_randskew_100_1000_100_distortion".png}&
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/rand_rand_100_1000_100_distortion".png}\\
   \end{tabular}  \caption{Synthetic Data: plotted the log mean squared error against the target dimension of the random projections. The data was either pulled from Gaussians with diagonal covariance, uniformly random covariance, or diagonal covariance with random noise (randskew)}.
   \label{fig:fmm_synthetic}
 \end{figure}
@@ -329,10 +329,10 @@ Isolet data consists of 1559 data points which have 308 features. In this datase
 
 \begin{figure}[ht]
 \begin{tabular}{cc}
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/arcene_5000_700_100_distortion".png} &
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/arcene_700_5000_100_distortion".png} \\
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/isolet_308_1559_100_distortion".png}&
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/isolet_t_1559_308_100_distortion".png}\\
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/arcene_5000_700_100_distortion".png} &
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/arcene_700_5000_100_distortion".png} \\
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/isolet_308_1559_100_distortion".png}&
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/isolet_t_1559_308_100_distortion".png}\\
   \end{tabular} \caption{Organic Data: Biological Data. The arcene data is mass-spectrometric (700 samples, 5000 features) and the isolet data includes sonorant features (1559 samples, 308 features). Here we take the feature space and randomly split the features in to two groups, so we have our data represented from features $A$ and from features $B$. We see improvement in mean squared error when applying our technique to compare the inner products of data points in both feature spaces. When we instead try to compare the inner products of the feature vectors we get no improvements.}.
   \label{fig:fmm_biological}
 \end{figure}
@@ -344,10 +344,10 @@ Both datasets we used were sparse integer-valued datasets obtained from the Repe
 
 \begin{figure}[ht]
 \begin{tabular}{cc}
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/go_sf_3853_2593_100_distortion".png} &
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/go_sf_t_2593_3853_100_distortion".png} \\
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/tw_oc_5673_5000_100_distortion".png}&
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/fmm/tw_oc_t_5000_5673_100_distortion".png}\\
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/go_sf_3853_2593_100_distortion".png} &
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/go_sf_t_2593_3853_100_distortion".png} \\
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/tw_oc_5673_5000_100_distortion".png}&
+  \includegraphics[width=.4\linewidth]{"experiments/fmm/tw_oc_t_5000_5673_100_distortion".png}\\
   \end{tabular}  \caption{Here we look at two sparse, integer valued datasets. Go SF has 2593 data points which have 3853 features. TW OC has 5000 data point with 5673 features. We see rescaling the diagonal covariance here gives significant improvements in mean squared error and gets very close CCA}.
   \label{fig:fmm_sparse}
 \end{figure}
@@ -364,9 +364,9 @@ The E2006 Dataset consists of 10-K reports from thousands of publicly traded U.S
 
 \begin{figure}[ht]
 \begin{tabular}{ccc}
-  \includegraphics[width=.3\linewidth]{"Data-Dependent Random Projections/experiments/regression/slice_localization_384_53500_5_lamb_5_0".png} &
-  \includegraphics[width=.3\linewidth]{"Data-Dependent Random Projections/experiments/regression/e2006_full_150360_16087_20_lamb_50_6".png} &
-  \includegraphics[width=.3\linewidth]{"Data-Dependent Random Projections/experiments/regression/e2006_full_150360_16087_20_lamb_50_5".png} \\
+  \includegraphics[width=.3\linewidth]{"experiments/regression/slice_localization_384_53500_5_lamb_5_0".png} &
+  \includegraphics[width=.3\linewidth]{"experiments/regression/e2006_full_150360_16087_20_lamb_50_6".png} &
+  \includegraphics[width=.3\linewidth]{"experiments/regression/e2006_full_150360_16087_20_lamb_50_5".png} \\
   \end{tabular}
   \label{fig:reg_linear}
   \caption{Linear Regression (fitting): Plotted emperical mean linear loss against hyper-parameter lambda. Slice localization dataset has 53500 samples with 384 features gathered from biological sources. E2006 dataset is sparse data derived from term frequency–inverse document frequency (16087 samples, 150630 dimensional). The isotropic prior causes huge blow up for the sparse data, but seems near optimal for the biological data.
@@ -387,8 +387,8 @@ Reuters Corpus Volume I (RCV1) is an archive of over 800,000 manually categorize
 
 \begin{figure}
 \begin{tabular}{cc}
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/regression/cifar_logistic_3072_1979_100_lamb_50_0".png} &
-  \includegraphics[width=.4\linewidth]{"Data-Dependent Random Projections/experiments/regression/rcv1_47236_20242_15_lamb_50_0".png}  \\
+  \includegraphics[width=.4\linewidth]{"experiments/regression/cifar_logistic_3072_1979_100_lamb_50_0".png} &
+  \includegraphics[width=.4\linewidth]{"experiments/regression/rcv1_47236_20242_15_lamb_50_0".png}  \\
   \end{tabular}
   \label{fig:reg_logistic}
   \caption{Logistic Regression (classification): plotted sklearn score (accuracy) against target dimension. Cifar dataset is image classification, 1979 samples with 3072 attributes projected 100 times. RCV1 dataset is 20242 data points with 47236 features. In both cases the isotropic prior behaves well.
