@@ -99,7 +99,7 @@
 
 Random projections are a popular tool for reducing dimensionality while preserving its geometry. In many applications the data set to be projected is given to us in advance, yet the current random projection techniques do not make use of information about the data. In this paper we provide a computationally light way to extract statistics from the data that allow to design a data dependent random projection with superior performance compared to data-oblivious random projections. Specifically we tackle scenarios such matrix multiplication and linear regression/classification in which we wish to estimate inner products (or distances) between pairs of vectors from two possibly different sources. We show that it is possible to exploit the difference between these sources to get superior results. 
 
-To showcase the effectiveness of our method we apply it on matrix multiplication where we achieve an reduction of X? \zk{fill this} on the error with near-zero computational overhead compared with oblivious random projection. For linear regression and classification following a dimension reduction operation our method gives rise to a novel technique of minimal computational cost, that potentially increases performance significantly (X\% improvement in accuracy \zk{write exact statement here}) when compared with oblivious random projections.
+To showcase the effectiveness of our method we apply it on matrix multiplication for feature matrices for machine learning tasks; we achieve a multiplicative reduction of 2/3 to the MSE with near-zero computational overhead compared with oblivious random projection. For linear regression and classification following a dimension reduction operation our method gives rise to a novel technique having the same computation cost as dimension reduction while enjoying from a signifcant performance increase. In our experiments, when compared to oblivious random projections we achieve a lift of 2\% to 5\% in accuracy for binary classification problems and a decrease of 3x in MSE for regression problems. 
 \end{abstract}
 
 
@@ -108,7 +108,9 @@ The use of random projections as a method for data compression has been well stu
 
 Another perspective on random projections is derived from the mean squared error of our estimator. To understand the mean squared error, we can decompose it into the expected variance and expected bias. By restricting to unbiased compressors, we reduce to minimizing the expected variance of our compressor. An unbiased compressor with small expected variance does not necessarily preserve the local $\ell^2$ structure with high probability (to see this one can look at a compressor given by randomly dropping coordinates of a vector). In addition to the low variance guarantee one still needs a $JL$-lemma to get the structure preservation. To the authors knowledge not much has been studied about minimum-variance unbiased compressors.
 
-In this paper we tackle the problem of preprocessing our data before applying traditional random projection techniques. Inherit to this is a flexibility to use any of the well-known random projection methods (including sparse random projections or FJLT), as long as they have associated to them JL-lemma guarantees. For the analysis of this paper, we assume our compressor is given by a matrix of iid Gaussians. Our main result details the best linear preprocessing method: the one which equalizes the covariance of our two datasets. Perhaps unsuprisingly, one consequence of this is there is no linear preprocessing which reduces variance when both of our datasets are drawn from the same distribution. In that symmetric situation one would need to develop a weighted random projection approach to reduce variance further. 
+In this paper we tackle the problem of preprocessing our data before applying traditional random projection techniques. Inherit to this is a flexibility to use any of the well-known random projection methods (including sparse random projections or FJLT), as long as they have associated to them JL-lemma guarantees. 
+\zk{the rest of this paragraph seems outdated - fix if incorrect}
+For the analysis of this paper, we assume our compressor is given by a matrix of iid Gaussians. Our main result details the best linear preprocessing method: the one which equalizes the covariance of our two datasets. Perhaps unsuprisingly, one consequence of this is there is no linear preprocessing which reduces variance when both of our datasets are drawn from the same distribution. In that symmetric situation one would need to develop a weighted random projection approach to reduce variance further. 
 
 % The famed Johnson-Lindenstrauss lemma yields high probability bounds for preserving the relative $\ell^2$ structure of arbitrary data. 
 
@@ -152,46 +154,24 @@ We give a rigorous analysis of our techniques proving that our methods are never
 %     \item Informed Weighted Random Projection for Dimension Reduction: Uses a mix of PCA with random projections, guided by labels of a learning task. 
 % \end{itemize}
 
-\section{Data Dependent Random Projections}
+\section{Data Dependent Random Projections} \label{sec:ddrp}
 
 In what follows we consider the following setup. There are two distributions $\X, \W$ over vectors of dimension $d$ that are know to us, either completely or via oracle access to i.i.d samples. We wish to estimate inner products of the form $\ip{x,w}$ where $x \sim \X, w \sim \W$. We do so via a linear dimension reduction operator that transforms $x$ and $w$ to dimension $k \ll d$ vectors $\tilde{x}, \tilde{w}$ in a way that $\ip{\tilde{x}, \tilde{w}} \approx \ip{x,w}$.
 
 \subsection{Oblivious Random Projections}
-Consider the case of an oblivious random projection. Here $R$ is a random $k \times d$ matrix and we have $\tilde{x} = Rx, \tilde{w} = Rw$. We consider the random variable $\ip{\tilde{x}, \tilde{w}}$ as an estimate to $\ip{x,w}$. Below we analyze the bias and variance of this r.v.\ for random projections obtained by having the elements of $R$ i.i.d. This analysis is not new, but it's details will be useful in the following sections for explaining are techniques.
+Consider the case of an oblivious random projection. Here $R$ is a random $k \times d$ matrix and we have $\tilde{x} = Rx, \tilde{w} = Rw$. We consider the random variable $\ip{\tilde{x}, \tilde{w}}$ as an estimate to $\ip{x,w}$. In what follows we provide an asymmetric pre-processing step for $x$ and $w$ applied before the random projection. We analyze its guarantee for any random projection giving an unbiased estimate with a specific variance bound. This is formally defined here
 
-\begin{lemma}
-Let $R$ be a $k \times d$ matrix of i.i.d entries whose first 4 moments are $0,1/k,0,s_4$, with $s_4 \leq 3/k^2$. We have that $\ip{\tilde{w},\tilde{x}}$ is an unbiased estimator of $\ip{x,w}$ whose variance is at most $\ip{x,w}^2 + \|x\|^2\|w\|^2$.
-\end{lemma}
-\begin{proof}
-\zk{we can have the proof in the appendix}
-
-
-We begin by analyzing a simple random projection obtained by sampling a $k \times d$ matrix $R$ of i.i.d scaled Gaussians $\mathcal{N}(0, 1/\sqrt{k})$. This analysis is not new, but it's details will be useful in the following sections for explaining are techniques. We have
-$$\E[\ip{Rx, Rw}] = \E[x^TR^TRw] = x^T\E[R^TR]w = x^TIw = \ip{x,w}$$
-meaning that our estimate is unbiased. We move on to compute its variance. To that end, we begin with the case of $k=1$ where the dimension reduction is with a $d$ dimensional vector $r$ and denote by $r_i$ its $i$'th element. We compute the second moment explicitly; to that end we denote by $s_{2,2} = \E_{r_i,r_j \sim \mathcal{N}(0,I)} r_i^2 r_j^2$, $s_{4} = \E_{r_i \sim \mathcal{N}(0,I)} r_i^4$. Recall that for the Gaussian distribution $s_{2,2}=1, s_{4}=3$.
-\begin{align*}
-    \E_{r \sim \mathcal{N}(0,I)} \ip{x, r}^2 \ip{w, r}^2 &= \E_r \left( \sum_i x_i r_i \right)^2 \left( \sum_i w_i r_i \right)^2\\
- &= \E_{r} \left(\sum_i x_i r_i\right)^2 \left(\sum_i w_i r_i\right)^2 \\
-&=\E_r \left(\sum_i x_i^2 r_i^2 +  \sum_{i \neq j} x_i x_j r_i r_j \right) \left(\sum_i w_i^2 r_i^2 + 2 \sum_{i < j} w_i w_j r_i r_j \right)\\
-&= \E_r \left(\sum_i x_i^2 w_i^2 r_i^4 + 2 \sum_{i \neq j} x_i x_j w_i w_j r_i^2 r_j^2 + \sum_{i \neq j} x_i^2 w_j^2 r_i^2 r_j^2\right) \\
-&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2} \sum_{i \neq j} x_i x_j w_i w_j  + s_{2,2} \sum_{i \neq j} x_i^2 w_j^2 \\
-&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2}\left(\ip{x,w}^2 - \sum_i x_i^2 w_i^2\right) + s_{2,2} \sum_{i \neq j} x_i^2 w_j^2 \\
-&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2}\left(\ip{x,w}^2 - \sum_i x_i^2 w_i^2\right) + s_{2,2} \left( \|x\|^2\|w\|^2 - \sum_i x_i^2 w_i^2 \right)  \\
-&= \left(s_4 - 3s_{2,2}\right)  \sum_i x_i^2 w_i^2 + 2s_{2,2} \ip{x, w}^2 + s_{2,2} \|x\|^2 \|w\|^2 \\
-&= 2\ip{x, w}^2 + \|x\|^2 \|w\|^2 \\
-\end{align*}
-We get that the variance of the estimate of $\ip{x,w}$ is
-$$\Var = \ip{x,w}^2 + \|x\|\|w\|^2$$
-For the case of $R$ being a matrix with target dimension $k$, since everything is i.i.d, the estimate is simply an average of $k$ independent estimates of target dimension 1, and the variance is the same as above, divided by $k$.
-\end{proof}
-
-We do prove this here, but mention that the bound on the variance of the estimated inner product given above extends, at least asymptotically to many other techniques such as the original Johnson and Lindenstrauss random projection, FJLT, and some sparse random projections. For generality we define the following 
 \begin{definition}
-A \emph{valid random projection} $R$ as one that for some constant $C$ independent of the data or its 
+A \emph{valid random projection} $R$ mapping $d$ dimensions into $k$ is one that for some constant $C$ independent of the data or its 
 dimension, is such that 
-$$ \E[\ip{Rx,Rw}] = \ip{x,w} , \ \ \  \Var[\ip{Rx,Rw}] \leq C \ip{x,w}^2 + \|x\|^2\|w\|^2 $$
+$$ \E[\ip{Rx,Rw}] = \ip{x,w} , \ \ \  \Var[\ip{Rx,Rw}] \leq \frac{C \ip{x,w}^2 + \|x\|^2\|w\|^2}{k} $$
 \end{definition}
-Our results provide a black-box modification to any valid random projection. In particular, as shown by the above lemma, it applies to random projections obtained from random gaussians or scaled signs.
+
+As a sanity check we mention that the standard random projections are indeed \emph{valid random projections}. For completeness we prove this for $R$ obtained from i.i.d entries. A similar statement can be made for other random projections yet is outside the scope of this paper.
+\begin{lemma} \label{lem:iid_rp}
+Let $R$ be a $k \times d$ matrix of i.i.d entries whose first 4 moments are $0,1/k,0,s_4$, with $s_4 \leq 3/k^2$. We have that $\ip{\tilde{w},\tilde{x}}$ is an unbiased estimator of $\ip{x,w}$ whose variance is at most $\frac{\ip{x,w}^2 + \|x\|^2\|w\|^2}{k}$.
+\end{lemma}
+The proof of the lemma is given in Appendix~\ref{sec:proof_ddrp}.
 
 
 \subsection{Our Solution}
@@ -199,7 +179,7 @@ Our technique follows from a simple observation. Consider an invertible matrix $
 $$ \tilde{x} = RAx, \ \ \ \tilde{w} = RA^{-\top}w $$
 where $A^{-\top} = (A^{-1})^\top$ is the inverse transpose of $A$. For these estimate it is easy to observe that $\ip{\tilde{x},\tilde{w}}$ remains an unbiased estimate of $x,w$ since $\ip{Ax, A^{-\top}w}=\ip{x,w}$. However, when we use the variance bound for valid random projections we get 
 $$\Var(x,w) \leq C \ip{x,w}^2 + \|Ax\|^2\|A^{-\top}w\|^2$$
-meaning we replaced the term $\|x\|^2\|w\|^2$ with $\|Ax\|^2 \|A^{-\top}w\|^2$. Now, since our vectors $x,w$ are drawn from known distributions we can consider a matrix $A$ that minimizes that quantity when averaged over the possible draws. Specifically, we aim to minimize the function
+meaning we replaced the term $\|x\|^2\|w\|^2$ with $\|Ax\|^2 \|A^{-\top}w\|^2$. Notice that unless $x$ and $w$ have very close directions the $\|x\|^2\|w\|^2$ term is the dominant one in the variance bound.  Now, since our vectors $x,w$ are drawn from known distributions we can consider a matrix $A$ that minimizes that quantity when averaged over the possible draws. Specifically, we aim to minimize the function
 $$\Phi(A) = \E_{x,w}\left[\|Ax\|^2\|A^{-\top}w\|^2\right]$$
 
 It turns out that $\Phi$ can be efficiently minimized by applying the technique of CCA (Canonical Correlation Analysis) on the covariance matrices.
@@ -208,7 +188,8 @@ It turns out that $\Phi$ can be efficiently minimized by applying the technique 
 Let $\X,\W$ be distributions over $\R^d$ with second moments $\Sigma_X=\E_x[xx^\top], \Sigma_W=\E_w[ww^\top]$. If we decompose 
 $$ \Sigma_X = Q_X^\top Q_X, \ \Sigma_W = Q_W^\top Q_W, Q_XQ_W^\top = UDV^\top $$
 with $UDV^\top$ the singular value decomposition of $Q_XQ_W^T$, the minimizer of $\Phi(A)$ is 
-$$  A^* = D^{1/2} U^\top Q^{-\top}$$
+$$  A^* = D^{1/2} U^\top Q_X^{-\top}$$
+\zk{Above the matrix was called $Q$. I changed it to $Q_x$. Is that true? Either way we need the proof in the next section}
 Letting $\sigma_X, \sigma_W$ be the vectors of the square roots of the eigenvalues of $\Sigma_X, \Sigma_W$. We have
 $$ \Phi(I) = \|\sigma_X\|^2 \|\sigma_W\|^2, \Phi(A^*) = \ip{\sigma_X, \sigma_W}^2 $$
 \end{theorem}
@@ -216,7 +197,7 @@ $$ \Phi(I) = \|\sigma_X\|^2 \|\sigma_W\|^2, \Phi(A^*) = \ip{\sigma_X, \sigma_W}^
 The above theorem provides the optimal solution to the problem of minimizing $\Phi(A)$ but its computational cost may be too steep. Although it is solvable in polynomial time, or even near linear time in an approximate version, we could have a scenario where the input dimension is quite large and we cannot afford to have multiple passes over it. For this scenario we provide an alternative solution that does not achieve the global minimum of $\Phi$ but admits a much simpler solution, and has guarantees that in many settings are sufficiently good. The idea in high level is to ignore all off-diagonal values of $\Sigma_X, \Sigma_W$ and solve the problem assuming they are zero. Collecting those stats can easily be done using a single pass and the decomposition becomes trivial.
 
 \begin{theorem} \label{thm:fast}
-Let $\X,\W$ be distributions over $\R^d$ with second moments $\Sigma_X=\E_x[xx^\top], \Sigma_W=\E_w[ww^\top]$. Let $d_X,  d_W$ element-wise square root of the diagonal vectors $\Sigma_X, \Sigma_W$ and let $\hat{A}$ be the diagonal matrix whose $i$'th entry is\footnote{If the diagonal has a zero value, it means we can ignore that entry in the original data. Hence, we assume w.l.o.g that all diagonals are strictly positive} $d_X(i)^{-1/2} d_W(i)^{1/2}$. It holds that
+Let $\X,\W$ be distributions over $\R^d$ with second moments $\Sigma_X=\E_x[xx^\top], \Sigma_W=\E_w[ww^\top]$. Let $d_X,  d_W$ element-wise square root of the diagonals of $\Sigma_X, \Sigma_W$ and let $\hat{A}$ be the diagonal matrix whose $i$'th entry is\footnote{If the diagonal has a zero value, it means we can ignore that entry in the original data. Hence, we assume w.l.o.g that all diagonals are strictly positive} $d_X(i)^{-1/2} d_W(i)^{1/2}$. It holds that
 $$ \Phi(I) = \|d_X\|^2 \|d_W\|^2, \Phi(\hat{A}) = \ip{d_X, d_W}^2 $$
 \end{theorem}
 
@@ -582,6 +563,28 @@ The far left is the optimal $\mu_2$ under CCA, the middle is the $\mu_2$ under d
 
 We can realize the improvements from optimal CCA rescaling as the gains from Cauchy-Schwarz on the Frobenius inner product on matrices, while the gains from diagonal rescaling come from Cauchy-Schwarz on the diagonal entries of our covariances. 
 \end{remark}
+
+
+\section{Proofs of Section~\ref{sec:ddrp}} \label{sec:proof_ddrp}
+\begin{proof} [Proof of Lemma~\ref{lem:iid_rp}]
+We first observe that the estimate is indeed unbiased
+$$\E[\ip{Rx, Rw}] = \E[x^TR^TRw] = x^T\E[R^TR]w = x^TIw = \ip{x,w}$$
+We move on to compute its variance. To that end, we begin with the case of $k=1$ where the dimension reduction is with a $d$ dimensional vector $r$ and denote by $r_i$ its $i$'th element. We compute the second moment explicitly; to that end we denote by $s_{2,2} = \E_{r_i,r_j} r_i^2 r_j^2$, $s_{4} = \E_{r_i } r_i^4$. For our distribution we have $s_{2,2}=1, s_{4} \leq 3$.
+\begin{align*}
+    \E_{r } \ip{x, r}^2 \ip{w, r}^2 &= \E_r \left( \sum_i x_i r_i \right)^2 \left( \sum_i w_i r_i \right)^2\\
+ &= \E_{r} \left(\sum_i x_i r_i\right)^2 \left(\sum_i w_i r_i\right)^2 \\
+&=\E_r \left(\sum_i x_i^2 r_i^2 +  \sum_{i \neq j} x_i x_j r_i r_j \right) \left(\sum_i w_i^2 r_i^2 + 2 \sum_{i < j} w_i w_j r_i r_j \right)\\
+&= \E_r \left(\sum_i x_i^2 w_i^2 r_i^4 + 2 \sum_{i \neq j} x_i x_j w_i w_j r_i^2 r_j^2 + \sum_{i \neq j} x_i^2 w_j^2 r_i^2 r_j^2\right) \\
+&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2} \sum_{i \neq j} x_i x_j w_i w_j  + s_{2,2} \sum_{i \neq j} x_i^2 w_j^2 \\
+&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2}\left(\ip{x,w}^2 - \sum_i x_i^2 w_i^2\right) + s_{2,2} \sum_{i \neq j} x_i^2 w_j^2 \\
+&= s_4 \sum_i x_i^2 w_i^2  + 2 s_{2,2}\left(\ip{x,w}^2 - \sum_i x_i^2 w_i^2\right) + s_{2,2} \left( \|x\|^2\|w\|^2 - \sum_i x_i^2 w_i^2 \right)  \\
+&= \left(s_4 - 3s_{2,2}\right)  \sum_i x_i^2 w_i^2 + 2s_{2,2} \ip{x, w}^2 + s_{2,2} \|x\|^2 \|w\|^2 \\
+&\leq 2\ip{x, w}^2 + \|x\|^2 \|w\|^2 \\
+\end{align*}
+We get that the variance of the estimate of $\ip{x,w}$ is
+$$\Var \leq \ip{x,w}^2 + \|x\|\|w\|^2$$
+For the case of $R$ being a matrix with target dimension $k$, since everything is i.i.d, the estimate is simply an average of $k$ independent estimates of target dimension 1, and the variance is the same as above, divided by $k$.
+\end{proof}
 
 
 
